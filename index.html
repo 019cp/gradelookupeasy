@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學生成績查詢系統</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --primary-hover: #357abd;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #e1e4e8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, "Microsoft JhengHei";
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 25px;
+            color: #2c3e50;
+        }
+
+        /* 標籤頁樣式 */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: #7f8c8d;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            margin-bottom: -2px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 表單樣式 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #34495e;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* 訊息提示 */
+        .flash-messages {
+            margin-bottom: 15px;
+        }
+
+        .flash-message {
+            padding: 10px;
+            background-color: #fde8e8;
+            color: #e53e3e;
+            border-left: 4px solid #e53e3e;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .flash-success {
+            background-color: #edf7ed;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+
+        /* 成績表格樣式 */
+        .result-box {
+            text-align: center;
+        }
+
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .score-table th, .score-table td {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .score-table th {
+            background-color: #f8f9fa;
+            color: #34495e;
+        }
+
+        .logout-btn {
+            background-color: #e74c3c;
+        }
+
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>成績查詢系統</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="flash-message {% if category == 'success' %}flash-success{% endif %}">
+                {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if not student %}
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('login-tab')">學生登入</button>
+            <button class="tab-btn" onclick="switchTab('register-tab')">首次設定密碼</button>
+        </div>
+
+        <div id="login-tab" class="tab-content active">
+            <form action="{{ url_for('login') }}" method="POST">
+                <div class="form-group">
+                    <label for="login_id">座號：</label>
+                    <input type="number" id="login_id" name="student_id" required min="1" placeholder="請輸入座號">
+                </div>
+                <div class="form-group">
+                    <label for="login_password">密碼：</label>
+                    <input type="password" id="login_password" name="password" required placeholder="請輸入密碼">
+                </div>
+                <button type="submit">登入查詢</button>
+            </form>
+        </div>
+
+        <div id="register-tab" class="tab-content">
+            <form action="{{ url_for('register') }}" method="POST">
+                <div class="form-group">
+                    <label for="reg_id">座號：</label>
+                    <input type="number" id="reg_id" name="student_id" required min="1" placeholder="請輸入座號">
+                </div>
+                <div class="form-group">
+                    <label for="reg_name">姓名：</label>
+                    <input type="text" id="reg_name" name="name" required placeholder="請輸入真實姓名驗證">
+                </div>
+                <div class="form-group">
+                    <label for="reg_password">設定新密碼：</label>
+                    <input type="password" id="reg_password" name="password" required placeholder="請自訂密碼">
+                </div>
+                <button type="submit">綁定密碼並登入</button>
+            </form>
+        </div>
+
+    {% else %}
+        <div class="result-box">
+            <h3>{{ student[1] }} 同學，您好！</h3>
+            <p style="color: #666;">座號：{{ student[0] }} 號</p>
+            
+            <table class="score-table">
+                <thead>
+                    <tr>
+                        <th>考試項目</th>
+                        <th>得分</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>第 1 段考試</td>
+                        <td style="font-weight: bold;">{{ student[4] }} 分</td>
+                    </tr>
+                    <tr>
+                        <td>第 2 段考試</td>
+                        <td style="font-weight: bold;">{{ student[3] }} 分</td>
+                    </tr>
+                    <tr>
+                        <td>第 3 段考試</td>
+                        <td style="font-weight: bold;">{{ student[2] }} 分</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <form action="{{ url_for('logout') }}" method="GET">
+                <button type="submit" class="logout-btn">登出系統</button>
+            </form>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    // 切換 登入 / 註冊 標籤頁
+    function switchTab(tabId) {
+        // 隱藏所有內容
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        // 取消所有按鈕高亮
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // 顯示點選的內容與高亮按鈕
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+</body>
+</html>
